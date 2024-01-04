@@ -1,0 +1,44 @@
+SYCL
+
+Goals
+--
+:Increased throughput - being able to do more work per unit time
+:Reduced latency - getting one thing done faster
+
+(Consider wanting to process more images per second 
+(e.g., assign a full image to a process) compared with processing a single image
+faster by splitting apart its pixels)
+
+Parallel Speed Up Factor
+--
+:1/1-p where p is the fraction of total work that can be done in parallel
+    e.g., 2/3 of work leads is bounded by a factor of 3 increase
+[Really only matters for a single process: consider doing 100 things vs one thing at once]
+
+
+Anatomy of SYCL
+--
+:Host code --> Set up kernel functions --> Pass to accelerator devices
+:SYCL offers constructs to help develops produce the right parallel plan
+    Want to get as much portability in performance and functionality as we can
+
+
+Selecting Devices
+--
+1) Execute anywhere: simple if we don't care where something happens
+2) Run on the host device explicitly: useful for debuggig
+3) Offload to a device
+4) Offload to a heteregeneous set of devices
+5) Select specific devices: e.g., a specific kind of GPU to target
+
+Queues
+--
+:Unambiguous single mapping between queue and device on initialisation
+
+Data Management
+--
+:Advantageous to co-locate computation and data due to bottlenecks in "remote" transfer
+:3 Main memory abstractions
+    - USM: uses a unified virtual address space and pointers, to have a shared notion of addresses and thus data values.
+    - Buffers
+    - Images (not considered here)
