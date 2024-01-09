@@ -40,5 +40,9 @@ Data Management
 :Advantageous to co-locate computation and data due to bottlenecks in "remote" transfer
 :3 Main memory abstractions
     - USM: uses a unified virtual address space and pointers, to have a shared notion of addresses and thus data values.
-    - Buffers
+        -- Memory transfers can be explicitly managed when on device, or implicitly if on host or shared (the latter allowing for data migration after access).
+
+    - Buffers: a memory abstraction representing data objects (e.g., floats). 
+        -- Memory cannot be directly accessed. This is for performance reasons, as the data may be across multiple devices. We use accessors in order to use the data in buffers. This provides the runtime with information about how the buffer is used, allowing it to correctly schedule the needed data movements.
+
     - Images (not considered here)
