@@ -1,4 +1,6 @@
 spec
 eventify-GPU/
 test_code/
+dpc_book/
 notes
+sycl-port/*.out
