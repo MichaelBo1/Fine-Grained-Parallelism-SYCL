@@ -3,4 +3,4 @@ eventify-GPU/
 test_code/
 dpc_book/
 notes
-sycl-port/*.out
+sycl-port/examples/*.out
