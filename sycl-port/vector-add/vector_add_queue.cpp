@@ -13,7 +13,7 @@ void profileForVecSize(sycl::queue &Q, std::vector<VectorEventProfile> &eventPro
     eventList shutdownEvents;
     std::vector<double> totalExecutionTimes;
 
-    auto myQueue = sycl::malloc_shared<SPMCArrayQueue<int, vectorSize>>(1, Q);
+    auto myQueue = sycl::malloc_shared<SPMCArrayQueue<int, vectorSize>>(16, Q);
     new (myQueue) SPMCArrayQueue<int, vectorSize>();
 
     int *A = sycl::malloc_shared<int>(vectorSize, Q);
@@ -22,9 +22,8 @@ void profileForVecSize(sycl::queue &Q, std::vector<VectorEventProfile> &eventPro
 
     for (int i = 0; i < vectorSize; i++)
     {
-        A[i] = i;
-        B[i] = i;
-        R[i] = 0;
+        A[i] = 1;
+        B[i] = 0;
     }
 
     for (int i = 0; i < profilingIters; i++)
@@ -75,8 +74,6 @@ void profileForVecSize(sycl::queue &Q, std::vector<VectorEventProfile> &eventPro
         enqueueEvents.push_back(enqueueEvent);
         addEvents.push_back(addEvent);
         shutdownEvents.push_back(shutdownEvent);
-
-
 
         auto endTime = std::chrono::high_resolution_clock::now(); 
         durationMiliSecs execTime = endTime - startTime;

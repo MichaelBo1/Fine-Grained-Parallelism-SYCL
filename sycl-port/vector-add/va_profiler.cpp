@@ -60,15 +60,3 @@ VectorEventProfile profileVecEvents(const eventList &events, const std::vector<d
 
     return vecEventProfile;
 }
-
-/*
-    Quick function to determine the correctness of a basic vector add
-*/
-bool checkAdd(int *A, int *B, int *R, int vectorSize)
-{
-    for (int i = 0; i < vectorSize; i++)
-    {
-        if (R[i] != A[i] + B[i]) return false;
-    }
-    return true;
-}

@@ -3,7 +3,7 @@
 #include "../Helpers.cpp"
 
 std::vector<int> vectorSizes = {10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000};
-
+//  
 int main(int argc, char **argv)
 {
     if (argc != 3)
@@ -35,8 +35,8 @@ int main(int argc, char **argv)
 
         for (int i = 0; i < vectorSize; i++)
         {
-            A[i] = i;
-            B[i] = i;
+            A[i] = 1;
+            B[i] = 0;
         }
 
         for (int i = 0; i < profilingIters; i++)
