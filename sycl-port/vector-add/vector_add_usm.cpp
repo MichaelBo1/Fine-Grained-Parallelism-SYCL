@@ -1,9 +1,9 @@
+#include <cmath>
 #include <fstream>
+#include "../sycl_utils.hpp"
+#include "../ArrayQueue.cpp"
 #include "va_profiler.cpp"
-#include "../Helpers.cpp"
-
-std::vector<int> vectorSizes = {10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000};
-//  
+  
 int main(int argc, char **argv)
 {
     if (argc != 3)
@@ -11,82 +11,90 @@ int main(int argc, char **argv)
         std::cout << "Usage: <exec> <profiling iterations> <write to file (1|0)>" << std::endl;
         return 1;
     }
-    int profilingIters = std::stoi(argv[1]);
-    int writeToFile = std::stoi(argv[2]);
+    int ProfilingIters = std::stoi(argv[1]);
+    int WriteToFile = std::stoi(argv[2]);
 
     sycl::default_selector device_selector;
     sycl::property_list props{sycl::property::queue::enable_profiling()}; // For measuring device execution times
 
     sycl::queue Q(device_selector, props);
-    printDevInfo(Q);
+    sycl::device Device = Q.get_device();
+
+    std::cout << "\nBegin Device Information ====================================" << "\n";
+    std::cout << Device;
+    std::cout << "End Device Information   ====================================" << "\n";
 
     // ------------------------
     // PROFILING
     // ------------------------
-    std::vector<VectorEventProfile> eventProfiles;
-    for (int vectorSize : vectorSizes)
+    std::vector<VectorEventProfile> EventProfiles;
+    for (int i = 7; i < 26; i++)
     {
-        eventList addEvents;
-        std::vector<double> totalExecutionTimes;
+        size_t VecSize = std::pow(2, i);
+        
+        eventList AddEvents;
+        std::vector<double> TotalExecutionTimes;
 
-        int *A = sycl::malloc_shared<int>(vectorSize, Q);
-        int *B = sycl::malloc_shared<int>(vectorSize, Q);
-        int *R = sycl::malloc_shared<int>(vectorSize, Q);
+        int *A = sycl::malloc_shared<int>(VecSize, Q);
+        int *B = sycl::malloc_shared<int>(VecSize, Q);
+        int *R = sycl::malloc_shared<int>(VecSize, Q);
 
-        for (int i = 0; i < vectorSize; i++)
+        for (int i = 0; i < VecSize; i++)
         {
             A[i] = 1;
             B[i] = 0;
         }
 
-        for (int i = 0; i < profilingIters; i++)
+        for (int i = 0; i < ProfilingIters; i++)
         {
-            auto startTime = std::chrono::high_resolution_clock::now();
+            auto StartTime = std::chrono::high_resolution_clock::now();
 
-            auto addEvent = Q.submit([&](sycl::handler &h)
+            auto AddEvent = Q.submit([&](sycl::handler &h)
             {
-                h.parallel_for(vectorSize, [=](sycl::id<1> idx)
+                h.parallel_for(VecSize, [=](sycl::id<1> idx)
                 {
                     R[idx] = A[idx] + B[idx];
                 });
             });
             Q.wait();
 
-            addEvents.push_back(addEvent);
+            AddEvents.push_back(AddEvent);
 
-            auto endTime = std::chrono::high_resolution_clock::now(); 
-            durationMiliSecs execTime = endTime - startTime;
-            totalExecutionTimes.push_back(execTime.count());
+            auto EndTime = std::chrono::high_resolution_clock::now(); 
+            durationMiliSecs ExecTime = EndTime - StartTime;
+            TotalExecutionTimes.push_back(ExecTime.count());
         }
 
-        bool res = checkAdd(A, B, R, vectorSize);
-        if (!res) std::cout << "Addition failed for vector size: " << vectorSize << "\n";
+        bool CorrectAdd = check_vector_add(A, B, R, VecSize);
+        std::cout << "Vector Addition for size: " << VecSize << "\n";
+        std::cout << "Correct? " << std::boolalpha << CorrectAdd << std::endl;
         
         sycl::free(A, Q);
         sycl::free(B, Q);
         sycl::free(R, Q);
 
-        VectorEventProfile addProfile = profileVecEvents(addEvents, totalExecutionTimes, "Simple Add", vectorSize);
-        eventProfiles.push_back(addProfile);
+        VectorEventProfile addProfile = profile_vec_events(AddEvents, TotalExecutionTimes, "Simple Add", VecSize);
+        EventProfiles.push_back(addProfile);
     }
 
-    if (writeToFile)
+    if (WriteToFile)
     {
-        std::ofstream outFile("profiling_va_usm.csv", std::ios::app);
+        std::ofstream OutFile("profiling-results/profiling_basic_va.csv", std::ios::app);
 
-        bool writeHeaders = outFile.tellp() == 0;
-        if (writeHeaders) {
-            outFile << "Event,CGSubmissionTime(ms),KernelExecTime(ms),TotalExecTime(ms),VectorSize\n";
+        bool WriteHeaders = OutFile.tellp() == 0;
+        if (WriteHeaders) {
+            OutFile << "Event,MeanCGSubmissionTime(ms),MeanKernelExecTime(ms),MeanTotalExecTime(ms),VecSize\n";
         }
         
-        for (const auto &profile : eventProfiles)
+        for (const auto &profile : EventProfiles)
         {
-            outFile << profile.name << "," << profile.profileData.cgSubmissionTime << "," 
-            << profile.profileData.kernelExecTime << "," << profile.profileData.totalExecTime << ","
+            OutFile << profile.name << "," << profile.profileData.cgSubmissionTime << "," 
+            << profile.profileData.kernelExecTime << "," 
+            << profile.profileData.totalExecTime << ","
             << profile.vecSize << "\n";
         }
 
-        outFile.close();
+        OutFile.close();
     }
 
     return 0;

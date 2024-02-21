@@ -9,17 +9,16 @@ using durationMiliSecs = std::chrono::duration<double, std::milli>;
 
 constexpr double nanoSecInMilisec = 1000000.0;
 
-double toMili(u64 timeNanoSecs)
+double to_mili(u64 timeNanoSecs)
 {
     return timeNanoSecs / nanoSecInMilisec;
 }
 
-// Miliseconds
 struct ProfileData
 {
-    double cgSubmissionTime{0};
-    double kernelExecTime{0};
-    double totalExecTime{0};
+    double cgSubmissionTime{0}; 
+    double kernelExecTime{0};   
+    double totalExecTime{0}; 
 };
 
 struct VectorEventProfile
@@ -29,34 +28,36 @@ struct VectorEventProfile
     int vecSize;
 };
 
-VectorEventProfile profileVecEvents(const eventList &events, const std::vector<double> &totalExecTimes, const std::string &eventName, int vecSize)
+VectorEventProfile profile_vec_events(const eventList &Events, const std::vector<double> &TotalExecTimes, const std::string &EventName, int VecSize)
 {
-    VectorEventProfile vecEventProfile;
-    ProfileData profileData;
-    u64 cgSubmissionTime = 0;
-    u64 kernelExecTime = 0;
-    double runningExecTime = 0;
+    VectorEventProfile VecEventProfile;
+    ProfileData ProfileData;
 
-    std::size_t numEvents = events.size();
-    for (std::size_t i = 0; i < numEvents; i++)
+    u64 CgSubmissionTime = 0;
+    u64 KernelExecTime = 0;
+    double RunningExecTime = 0;
+
+    std::size_t NumEvents = Events.size();
+    for (int i = 0; i < NumEvents; i++)
     {
-        auto curEvent = events.at(i);
+        auto CurEvent = Events.at(i);
 
-        auto cgSubmissionTimePoint = curEvent.get_profiling_info<sycl::info::event_profiling::command_submit>();
-        auto startKernelExecTimePoint = curEvent.get_profiling_info<sycl::info::event_profiling::command_start>();
-        auto endKernelExecTimePoint = curEvent.get_profiling_info<sycl::info::event_profiling::command_end>();
-        cgSubmissionTime += startKernelExecTimePoint - cgSubmissionTimePoint;
-        kernelExecTime += endKernelExecTimePoint - startKernelExecTimePoint;
-        runningExecTime += totalExecTimes.at(i);
+        auto CgSubmissionTimePoint = CurEvent.get_profiling_info<sycl::info::event_profiling::command_submit>();
+        auto StartKernelExecTimePoint = CurEvent.get_profiling_info<sycl::info::event_profiling::command_start>();
+        auto EndKernelExecTimePoint = CurEvent.get_profiling_info<sycl::info::event_profiling::command_end>();
+
+        CgSubmissionTime += StartKernelExecTimePoint - CgSubmissionTimePoint;
+        KernelExecTime += EndKernelExecTimePoint - StartKernelExecTimePoint;
+        RunningExecTime += TotalExecTimes.at(i);
     }
 
-    profileData.cgSubmissionTime = toMili(cgSubmissionTime / numEvents);
-    profileData.kernelExecTime = toMili(kernelExecTime / numEvents);
-    profileData.totalExecTime = runningExecTime / numEvents;
+    ProfileData.cgSubmissionTime = to_mili(CgSubmissionTime / NumEvents);
+    ProfileData.kernelExecTime = to_mili(KernelExecTime / NumEvents);
+    ProfileData.totalExecTime = RunningExecTime / NumEvents;
     
-    vecEventProfile.profileData = profileData;
-    vecEventProfile.name = eventName;
-    vecEventProfile.vecSize = vecSize;
+    VecEventProfile.profileData = ProfileData;
+    VecEventProfile.name = EventName;
+    VecEventProfile.vecSize = VecSize;
 
-    return vecEventProfile;
+    return VecEventProfile;
 }
