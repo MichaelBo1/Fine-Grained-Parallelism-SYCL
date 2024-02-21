@@ -77,38 +77,52 @@ void multi_queue_vector_add(sycl::queue &Q, const size_t WorkGroupSize)
         B[i] = 0;
     }
 
-    // # work groups same as # queues? --> needs to be
     Q.submit([&](sycl::handler &h)
     {
         h.parallel_for(sycl::nd_range<1>{sycl::range<1>{VecSize}, sycl::range<1>{WorkGroupSize}}, [=](sycl::nd_item<1> Item)
         {
             if (Item.get_local_id() == 0)
             {
-                auto TargetQueue = TaskQueues[Item.get_global_id()];
-                for (int i = 0; i < VecSize; i++)
+                int QueueIdx = Item.get_global_id() / WorkGroupSize;
+                auto &TargetQueue = TaskQueues[QueueIdx];
+
+                for (int i = 0; i < WorkGroupSize; i++)
                 {
-                    TargetQueue.push(i);
+                    int ItemVal = i + QueueIdx * WorkGroupSize;
+                    TargetQueue.push(ItemVal);
                 }
             }
         });
     });
     Q.wait();
 
-    // Q.submit([&](sycl::handler &h)
-    // {
-    //     h.parallel_for(sycl::nd_range<1>{sycl::range<1>{VecSize}, sycl::range<1>{WorkGroupSize}}, [=](sycl::nd_item<1> Item)
-    //     {
-    //         auto TargetQueue = TaskQueues[Item.get_global_id()];
-    //         auto LocalId = Item.get_local_id();
-    //         // Prevent out-of-bounds access
-    //         if (LocalId < TargetQueue.size())
-    //         {
-    //             int ItemVal = TargetQueue.front(LocalId);
-    //             R[ItemVal] = A[ItemVal] + B[ItemVal];
-    //         } 
-    //     }); 
-    // });
-    // Q.wait();
+    sycl::event AddEvent = Q.submit([&](sycl::handler &h)
+    {
+        h.parallel_for(sycl::nd_range<1>{sycl::range<1>{VecSize}, sycl::range<1>{WorkGroupSize}}, [=](sycl::nd_item<1> Item)
+        {
+            int QueueIdx = Item.get_global_id() / WorkGroupSize;
+            auto &TargetQueue = TaskQueues[QueueIdx];
+
+            int ItemVal = TargetQueue.front(Item.get_local_id());
+            R[ItemVal] = A[ItemVal] + B[ItemVal];
+        });
+    });
+    Q.wait();
+    
+    sycl::event ShutdownEvent = Q.submit([&](sycl::handler &h)
+        {
+        h.parallel_for(sycl::nd_range<1>{sycl::range<1>{VecSize}, sycl::range<1>{WorkGroupSize}}, [=](sycl::nd_item<1> Item)
+        {
+            int QueueIdx = Item.get_global_id() / WorkGroupSize;
+            auto &TargetQueue = TaskQueues[QueueIdx];
+
+            while (!TargetQueue.empty())
+            {
+                TargetQueue.pop();
+            }
+        });
+    });
+    Q.wait();
 
     bool CorrectAdd = check_vector_add(A, B, R, VecSize);
     std::cout << "Vector Addition for size: " << VecSize << "\n";
@@ -132,9 +146,9 @@ int main(int argc, char **argv)
     std::cout << Device;
     std::cout << "End Device Information   ====================================" << "\n";
 
-    constexpr size_t VecSize = 65536;
-    auto WorkGroupSize = std::min(Device.get_info<sycl::info::device::max_work_group_size>(), VecSize + (VecSize % 2));
-
+    constexpr size_t VecSize = 32;
+    // auto WorkGroupSize = std::min(Device.get_info<sycl::info::device::max_work_group_size>(), VecSize + (VecSize % 2));
+    auto WorkGroupSize = 16;
     if (WorkGroupSize % 2 != 0)
     {
         throw "Work-group size needs to be even!";
