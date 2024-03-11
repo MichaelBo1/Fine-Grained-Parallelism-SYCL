@@ -19,6 +19,8 @@ struct ProfileData
     double cgSubmissionTime{0}; 
     double kernelExecTime{0};   
     double totalExecTime{0}; 
+    double kernelExecTimeStdDev{0};   
+    double totalExecTimeStdDev{0}; 
 };
 
 struct VectorEventProfile
@@ -50,11 +52,34 @@ VectorEventProfile profile_vec_events(const eventList &Events, const std::vector
         KernelExecTime += EndKernelExecTimePoint - StartKernelExecTimePoint;
         RunningExecTime += TotalExecTimes.at(i);
     }
-
+    
     ProfileData.cgSubmissionTime = to_mili(CgSubmissionTime / NumEvents);
     ProfileData.kernelExecTime = to_mili(KernelExecTime / NumEvents);
     ProfileData.totalExecTime = RunningExecTime / NumEvents;
-    
+    // Calculate variances
+    double kernelExecTimeVariance = 0;
+    double totalExecTimeVariance = 0;
+
+    for (int i = 0; i < NumEvents; i++)
+    {
+        auto CurEvent = Events.at(i);
+
+        auto StartKernelExecTimePoint = CurEvent.get_profiling_info<sycl::info::event_profiling::command_start>();
+        auto EndKernelExecTimePoint = CurEvent.get_profiling_info<sycl::info::event_profiling::command_end>();
+
+        double kernelExecTimeDiff = to_mili(EndKernelExecTimePoint - StartKernelExecTimePoint) - ProfileData.kernelExecTime;
+        std::cout << EventName << " current value: " << to_mili(EndKernelExecTimePoint - StartKernelExecTimePoint) << " avg value: " << ProfileData.kernelExecTime << "\n";
+        std::cout << "diff " << kernelExecTimeDiff << "\n";
+        double totalExecTimeDiff = TotalExecTimes.at(i) - ProfileData.totalExecTime;
+
+        kernelExecTimeVariance += kernelExecTimeDiff * kernelExecTimeDiff;
+        totalExecTimeVariance += totalExecTimeDiff * totalExecTimeDiff;
+    }
+
+    ProfileData.kernelExecTimeStdDev = std::sqrt(kernelExecTimeVariance / NumEvents);
+    std::cout << "kernel std " << ProfileData.kernelExecTimeStdDev << "\n";
+    ProfileData.totalExecTimeStdDev = std::sqrt(totalExecTimeVariance / NumEvents);
+
     VecEventProfile.profileData = ProfileData;
     VecEventProfile.name = EventName;
     VecEventProfile.vecSize = VecSize;

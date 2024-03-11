@@ -71,13 +71,13 @@ void profile_for_vec_size(sycl::queue &Q, std::vector<VectorEventProfile> &Event
         });
         Q.wait();
 
-        EnqueueEvents.push_back(EnqueueEvent);
-        AddEvents.push_back(AddEvent);
-        ShutdownEvents.push_back(ShutdownEvent);
-
         auto EndTime = std::chrono::high_resolution_clock::now(); 
         durationMiliSecs ExecTime = EndTime - StartTime;
         TotalExecutionTimes.push_back(ExecTime.count());
+
+        EnqueueEvents.push_back(EnqueueEvent);
+        AddEvents.push_back(AddEvent);
+        ShutdownEvents.push_back(ShutdownEvent);
     }
 
     bool CorrectAdd = check_vector_add(A, B, R, VecSize);
@@ -101,13 +101,14 @@ void profile_for_vec_size(sycl::queue &Q, std::vector<VectorEventProfile> &Event
 
 int main(int argc, char **argv)
 {
-    if (argc != 3)
+    if (argc != 4)
     {
-        std::cout << "Usage: <exec> <profiling iterations> <write to file (1|0)>" << std::endl;
+        std::cout << "Usage: <exec> <profiling iterations> <write to file (1|0)> <GPU name>" << std::endl;
         return 1;
     }
     int ProfilingIters = std::stoi(argv[1]);
     int WriteToFile = std::stoi(argv[2]);
+    auto GPU = argv[3];
 
     sycl::default_selector device_selector;
     sycl::property_list props{sycl::property::queue::enable_profiling()}; // For measuring device execution times
@@ -126,14 +127,14 @@ int main(int argc, char **argv)
 
     std::vector<VectorEventProfile> EventProfiles;
 
-    profile_for_vec_size<128>(Q, EventProfiles, ProfilingIters);
-    profile_for_vec_size<256>(Q, EventProfiles, ProfilingIters);
-    profile_for_vec_size<512>(Q, EventProfiles, ProfilingIters);
+    // profile_for_vec_size<128>(Q, EventProfiles, ProfilingIters);
+    // profile_for_vec_size<256>(Q, EventProfiles, ProfilingIters);
+    // profile_for_vec_size<512>(Q, EventProfiles, ProfilingIters);
     profile_for_vec_size<1024>(Q, EventProfiles, ProfilingIters);
     profile_for_vec_size<2048>(Q, EventProfiles, ProfilingIters);
     profile_for_vec_size<4096>(Q, EventProfiles, ProfilingIters);
     profile_for_vec_size<8192>(Q, EventProfiles, ProfilingIters);
-    profile_for_vec_size<16834>(Q, EventProfiles, ProfilingIters);
+    profile_for_vec_size<16384>(Q, EventProfiles, ProfilingIters);
     profile_for_vec_size<32768>(Q, EventProfiles, ProfilingIters);
     profile_for_vec_size<65536>(Q, EventProfiles, ProfilingIters);
     profile_for_vec_size<131072>(Q, EventProfiles, ProfilingIters);
@@ -145,14 +146,18 @@ int main(int argc, char **argv)
     profile_for_vec_size<8388608>(Q, EventProfiles, ProfilingIters);
     profile_for_vec_size<16777216>(Q, EventProfiles, ProfilingIters);
     profile_for_vec_size<33554432>(Q, EventProfiles, ProfilingIters);
+    profile_for_vec_size<67108864>(Q, EventProfiles, ProfilingIters);
+    profile_for_vec_size<134217728>(Q, EventProfiles, ProfilingIters);
+    profile_for_vec_size<268435456>(Q, EventProfiles, ProfilingIters);
+    profile_for_vec_size<536870912>(Q, EventProfiles, ProfilingIters);
 
     if (WriteToFile)
     {
-        std::ofstream OutFile("profiling-results/profiling_basic_queue.csv", std::ios::app);
+        std::ofstream OutFile("profiling-results/profiling_single_queue.csv", std::ios::app);
     
         bool WriteHeaders = OutFile.tellp() == 0;
         if (WriteHeaders) {
-            OutFile << "Event,MeanCGSubmissionTime(ms),MeanKernelExecTime(ms),MeanTotalExecTime(ms),VecSize\n";
+            OutFile << "Event,MeanCGSubmissionTime(ms),MeanKernelExecTime(ms),MeanTotalExecTime(ms),VecSize,GPU\n";
         }
         
         for (const auto &profile : EventProfiles)
@@ -160,7 +165,8 @@ int main(int argc, char **argv)
             OutFile << profile.name << "," << profile.profileData.cgSubmissionTime << "," 
             << profile.profileData.kernelExecTime << "," 
             << profile.profileData.totalExecTime << ","
-            << profile.vecSize << "\n";
+            << profile.vecSize << ","
+            << GPU << "\n";
         }
 
         OutFile.close();

@@ -6,13 +6,14 @@
   
 int main(int argc, char **argv)
 {
-    if (argc != 3)
+    if (argc != 4)
     {
-        std::cout << "Usage: <exec> <profiling iterations> <write to file (1|0)>" << std::endl;
+        std::cout << "Usage: <exec> <profiling iterations> <write to file (1|0)> <GPU name>" << std::endl;
         return 1;
     }
     int ProfilingIters = std::stoi(argv[1]);
     int WriteToFile = std::stoi(argv[2]);
+    auto GPU = argv[3];
 
     sycl::default_selector device_selector;
     sycl::property_list props{sycl::property::queue::enable_profiling()}; // For measuring device execution times
@@ -28,7 +29,7 @@ int main(int argc, char **argv)
     // PROFILING
     // ------------------------
     std::vector<VectorEventProfile> EventProfiles;
-    for (int i = 7; i < 26; i++)
+    for (int i = 10; i < 30; i++)
     {
         size_t VecSize = std::pow(2, i);
         
@@ -62,10 +63,11 @@ int main(int argc, char **argv)
 
             auto EndTime = std::chrono::high_resolution_clock::now(); 
             durationMiliSecs ExecTime = EndTime - StartTime;
+            std::cout << "Exec time for iter {" << i << "}, for vecsize: " << VecSize << " " << ExecTime.count() << "\n";
             TotalExecutionTimes.push_back(ExecTime.count());
         }
 
-        bool CorrectAdd = check_vector_add(A, B, R, VecSize);
+        bool CorrectAdd = check_vector_add(R, VecSize);
         std::cout << "Vector Addition for size: " << VecSize << "\n";
         std::cout << "Correct? " << std::boolalpha << CorrectAdd << std::endl;
         
@@ -79,19 +81,22 @@ int main(int argc, char **argv)
 
     if (WriteToFile)
     {
-        std::ofstream OutFile("profiling-results/profiling_basic_va.csv", std::ios::app);
+        std::ofstream OutFile("profiling-results/profiling_va_usm_test.csv", std::ios::app);
 
         bool WriteHeaders = OutFile.tellp() == 0;
         if (WriteHeaders) {
-            OutFile << "Event,MeanCGSubmissionTime(ms),MeanKernelExecTime(ms),MeanTotalExecTime(ms),VecSize\n";
+            OutFile << "Event,MeanCGSubmissionTime(ms),MeanKernelExecTime(ms),StdKernelExecTime(ms),MeanTotalExecTime(ms),StdTotalExecTime(ms),VecSize,GPU\n";
         }
         
         for (const auto &profile : EventProfiles)
         {
             OutFile << profile.name << "," << profile.profileData.cgSubmissionTime << "," 
-            << profile.profileData.kernelExecTime << "," 
+            << profile.profileData.kernelExecTime << ","
+            << profile.profileData.kernelExecTimeStdDev << "," 
             << profile.profileData.totalExecTime << ","
-            << profile.vecSize << "\n";
+            << profile.profileData.totalExecTimeStdDev << ","
+            << profile.vecSize << ","
+            << GPU << "\n";
         }
 
         OutFile.close();
