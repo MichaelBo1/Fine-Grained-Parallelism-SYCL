@@ -11,6 +11,10 @@ namespace sycl
            << device.get_info<sycl::info::device::name>() << "\n"
            << "Max work items: " 
            << device.get_info<sycl::info::device::max_work_group_size>() << "\n"
+           << "Max compute units: "
+           << device.get_info<sycl::info::device::max_compute_units>() << "\n"
+
+
         //    << "Max work items sizes<1>: " 
         //    << device.get_info<sycl::info::device::max_work_item_sizes<1>>() << "\n"
         //    << "Max work items sizes<2>: " 
@@ -27,7 +31,7 @@ namespace sycl
     Quick function to determine the correctness of a basic vector add
     --> assumes 1 + 0 for each element
 */
-bool check_vector_add(int *A, int *B, int *R, size_t VecSize, int NElements = 3)
+bool check_vector_add(int *R, size_t VecSize, int NElements = 3)
 {
     bool IsCorrect = true;
     for (size_t i = 0; i < VecSize; i++)
