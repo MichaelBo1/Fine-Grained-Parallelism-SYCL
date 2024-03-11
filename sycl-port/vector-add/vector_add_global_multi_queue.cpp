@@ -4,6 +4,102 @@
 #include "va_profiler.cpp"
 
 template<std::size_t WorkGroupSize>
+void profile_sk_multi_queue_va(sycl::queue &Q, const std::size_t VecSize, std::vector<VectorEventProfile> &EventProfiles, int ProfilingIters)
+{
+    eventList MqAddEvents;
+
+    std::vector<double> TotalExecutionTimes;
+
+    const size_t NumWorkGroups = VecSize / WorkGroupSize;
+    if (NumWorkGroups % 2 != 0 && NumWorkGroups != 1)
+    {
+        std::cerr << "Number of work groups should divide Vector Size evenly!" << "\n";
+        return;
+    }
+
+    std::cout << " ========== PROFILING ========== " << "\n"
+    << "Vector Size: " << VecSize << "\n"
+    << "# of Work Groups: " << NumWorkGroups << "\n";
+    
+    auto TaskQueues = sycl::malloc_shared<SPMCArrayQueue<int, WorkGroupSize>>(NumWorkGroups, Q);
+    for (size_t i = 0; i < NumWorkGroups; i++)
+    {
+        new (TaskQueues + i) SPMCArrayQueue<int, WorkGroupSize>();
+    }
+
+    int *A = sycl::malloc_shared<int>(VecSize, Q);
+    int *B = sycl::malloc_shared<int>(VecSize, Q);
+    int *R = sycl::malloc_shared<int>(VecSize, Q);
+
+    for (int i = 0; i < VecSize; i++)
+    {
+        A[i] = 1;
+        B[i] = 0;
+    }
+
+    for (int i = 0; i < ProfilingIters; i++)
+    {
+        auto StartTime = std::chrono::high_resolution_clock::now();
+
+        sycl::event MqAddEvent = Q.submit([&](sycl::handler &h)
+        {
+            h.parallel_for(sycl::nd_range<1>{sycl::range<1>{VecSize}, sycl::range<1>{WorkGroupSize}}, [=](sycl::nd_item<1> Item)
+            {
+                int QueueIdx = Item.get_global_id() / WorkGroupSize;
+                auto &TargetQueue = TaskQueues[QueueIdx];
+                sycl::group Group = Item.get_group();
+
+                if (Item.get_local_id() == 0)
+                {
+                    for (int i = 0; i < WorkGroupSize; i++)
+                    {
+                        int ItemVal = i + QueueIdx * WorkGroupSize;
+                        TargetQueue.push(ItemVal);
+                    }
+                }
+
+                sycl::group_barrier(Group);
+
+                int ItemVal = TargetQueue.front(Item.get_local_id());
+                R[ItemVal] = A[ItemVal] + B[ItemVal];
+
+                sycl::group_barrier(Group);
+
+                if (Item.get_local_id() == 0)
+                {
+                    while (!TargetQueue.empty())
+                    {
+                        TargetQueue.pop();
+                    }
+                }
+            });
+        });
+        Q.wait();
+        
+        auto EndTime = std::chrono::high_resolution_clock::now(); 
+        durationMiliSecs ExecTime = EndTime - StartTime;
+        TotalExecutionTimes.push_back(ExecTime.count());
+
+        MqAddEvents.push_back(MqAddEvent);
+    }
+
+    bool CorrectAdd = check_vector_add(A, B, R, VecSize);
+    std::cout << "Correct? " << std::boolalpha << CorrectAdd << std::endl;
+
+    sycl::free(TaskQueues, Q);
+    sycl::free(A, Q);
+    sycl::free(B, Q);
+    sycl::free(R, Q);
+
+    VectorEventProfile MqAddProfile = profile_vec_events(MqAddEvents, TotalExecutionTimes, "MQ Add", VecSize);  
+    
+    EventProfiles.push_back(MqAddProfile);
+
+    std::cout << " ========== END PROFILING ========== " << "\n";
+
+}
+
+template<std::size_t WorkGroupSize>
 void profile_multi_queue_va(sycl::queue &Q, const std::size_t VecSize, std::vector<VectorEventProfile> &EventProfiles, int ProfilingIters)
 {
     eventList EnqueueEvents;
@@ -36,10 +132,6 @@ void profile_multi_queue_va(sycl::queue &Q, const std::size_t VecSize, std::vect
     {
         A[i] = 1;
         B[i] = 0;
-    }
-
-    {
-
     }
 
     for (int i = 0; i < ProfilingIters; i++)
@@ -127,13 +219,14 @@ void profile_multi_queue_va(sycl::queue &Q, const std::size_t VecSize, std::vect
 
 int main(int argc, char **argv)
 {
-    if (argc != 3)
+    if (argc != 4)
     {
-        std::cout << "Usage: <exec> <profiling iterations> <write to file (1|0)>" << std::endl;
+        std::cout << "Usage: <exec> <profiling iterations> <write to file (1|0)> <GPU name>" << std::endl;
         return 1;
     }
     int ProfilingIters = std::stoi(argv[1]);
     int WriteToFile = std::stoi(argv[2]);
+    auto GPU = argv[3];
 
 
     sycl::default_selector device_selector;
@@ -164,16 +257,16 @@ int main(int argc, char **argv)
     for (int i = 10; i < 30; i++)
     {
         std::size_t VecSize = std::pow(2, i);
-        profile_multi_queue_va<WorkGroupSize>(Q, VecSize, EventProfiles, ProfilingIters);
+        profile_sk_multi_queue_va<WorkGroupSize>(Q, VecSize, EventProfiles, ProfilingIters);
     }
 
     if (WriteToFile)
     {
-        std::ofstream OutFile("profiling-results/profiling_global_multi_queue.csv", std::ios::app);
+        std::ofstream OutFile("profiling-results/profiling_sk_global_multi_queue.csv", std::ios::app);
     
         bool WriteHeaders = OutFile.tellp() == 0;
         if (WriteHeaders) {
-            OutFile << "Event,MeanCGSubmissionTime(ms),MeanKernelExecTime(ms),MeanTotalExecTime(ms),VecSize,WorkGroupSize\n";
+            OutFile << "Event,MeanCGSubmissionTime(ms),MeanKernelExecTime(ms),MeanTotalExecTime(ms),VecSize,WorkGroupSize,GPU\n";
         }
         
         for (const auto &profile : EventProfiles)
@@ -182,7 +275,9 @@ int main(int argc, char **argv)
             << profile.profileData.kernelExecTime << "," 
             << profile.profileData.totalExecTime << ","
             << profile.vecSize << ","
-            << WorkGroupSize << "\n";
+            << WorkGroupSize << ","
+            << GPU
+            << "\n";
         }
 
         OutFile.close();
