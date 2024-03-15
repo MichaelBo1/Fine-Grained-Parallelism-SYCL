@@ -36,14 +36,14 @@ bool check_vector_add(int *R, size_t VecSize, int NElements = 3)
     bool IsCorrect = true;
     for (size_t i = 0; i < VecSize; i++)
     {
-        if (i < NElements || i > VecSize - NElements - 1)
-        {
-            std::cout << R[i] << " ";
-        }
+        // if (i < NElements || i > VecSize - NElements - 1)
+        // {
+        //     std::cout << R[i] << " ";
+        // }
         if (R[i] != 1) IsCorrect = false;
     }
 
-    std::cout << std::endl;
+    // std::cout << std::endl;
     return IsCorrect;
 }
 #endif

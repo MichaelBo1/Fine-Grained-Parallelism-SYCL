@@ -4,85 +4,18 @@
 #include <CL/sycl.hpp>
 
 using u64 = uint64_t;
-using eventList = std::vector<sycl::event>;
 using durationMiliSecs = std::chrono::duration<double, std::milli>;
 
-constexpr double nanoSecInMilisec = 1000000.0;
+constexpr double NanoSecInMilisec = 1000000.0;
 
-double to_mili(u64 timeNanoSecs)
+double to_mili(u64 TimeNanoSecs)
 {
-    return timeNanoSecs / nanoSecInMilisec;
+    return TimeNanoSecs / NanoSecInMilisec;
 }
 
-struct ProfileData
+struct TimingEvent
 {
-    double cgSubmissionTime{0}; 
-    double kernelExecTime{0};   
-    double totalExecTime{0}; 
-    double kernelExecTimeStdDev{0};   
-    double totalExecTimeStdDev{0}; 
+    std::string Name;
+    std::size_t VectorSize;
+    double ExecTime;
 };
-
-struct VectorEventProfile
-{
-    ProfileData profileData;
-    std::string name;
-    int vecSize;
-};
-
-VectorEventProfile profile_vec_events(const eventList &Events, const std::vector<double> &TotalExecTimes, const std::string &EventName, int VecSize)
-{
-    VectorEventProfile VecEventProfile;
-    ProfileData ProfileData;
-
-    u64 CgSubmissionTime = 0;
-    u64 KernelExecTime = 0;
-    double RunningExecTime = 0;
-
-    std::size_t NumEvents = Events.size();
-    for (int i = 0; i < NumEvents; i++)
-    {
-        auto CurEvent = Events.at(i);
-
-        auto CgSubmissionTimePoint = CurEvent.get_profiling_info<sycl::info::event_profiling::command_submit>();
-        auto StartKernelExecTimePoint = CurEvent.get_profiling_info<sycl::info::event_profiling::command_start>();
-        auto EndKernelExecTimePoint = CurEvent.get_profiling_info<sycl::info::event_profiling::command_end>();
-
-        CgSubmissionTime += StartKernelExecTimePoint - CgSubmissionTimePoint;
-        KernelExecTime += EndKernelExecTimePoint - StartKernelExecTimePoint;
-        RunningExecTime += TotalExecTimes.at(i);
-    }
-    
-    ProfileData.cgSubmissionTime = to_mili(CgSubmissionTime / NumEvents);
-    ProfileData.kernelExecTime = to_mili(KernelExecTime / NumEvents);
-    ProfileData.totalExecTime = RunningExecTime / NumEvents;
-    // Calculate variances
-    double kernelExecTimeVariance = 0;
-    double totalExecTimeVariance = 0;
-
-    for (int i = 0; i < NumEvents; i++)
-    {
-        auto CurEvent = Events.at(i);
-
-        auto StartKernelExecTimePoint = CurEvent.get_profiling_info<sycl::info::event_profiling::command_start>();
-        auto EndKernelExecTimePoint = CurEvent.get_profiling_info<sycl::info::event_profiling::command_end>();
-
-        double kernelExecTimeDiff = to_mili(EndKernelExecTimePoint - StartKernelExecTimePoint) - ProfileData.kernelExecTime;
-        std::cout << EventName << " current value: " << to_mili(EndKernelExecTimePoint - StartKernelExecTimePoint) << " avg value: " << ProfileData.kernelExecTime << "\n";
-        std::cout << "diff " << kernelExecTimeDiff << "\n";
-        double totalExecTimeDiff = TotalExecTimes.at(i) - ProfileData.totalExecTime;
-
-        kernelExecTimeVariance += kernelExecTimeDiff * kernelExecTimeDiff;
-        totalExecTimeVariance += totalExecTimeDiff * totalExecTimeDiff;
-    }
-
-    ProfileData.kernelExecTimeStdDev = std::sqrt(kernelExecTimeVariance / NumEvents);
-    std::cout << "kernel std " << ProfileData.kernelExecTimeStdDev << "\n";
-    ProfileData.totalExecTimeStdDev = std::sqrt(totalExecTimeVariance / NumEvents);
-
-    VecEventProfile.profileData = ProfileData;
-    VecEventProfile.name = EventName;
-    VecEventProfile.vecSize = VecSize;
-
-    return VecEventProfile;
-}
