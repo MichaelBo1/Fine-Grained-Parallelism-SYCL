@@ -4,3 +4,4 @@ test_code/
 dpc_book/
 notes
 sycl-port/examples/*.out
+env/
