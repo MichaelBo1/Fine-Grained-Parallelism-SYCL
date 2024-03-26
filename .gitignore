@@ -4,5 +4,4 @@ test_code/
 dpc_book/
 notes
 *.out
-*.csv
 env/
