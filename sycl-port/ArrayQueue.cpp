@@ -60,7 +60,7 @@ class SPMCArrayQueue
         }
 
     protected:
-        int m_nextElement; // index of the next available spot in the element array
         int m_size; // current number of elements in the queue
+        int m_nextElement; // index of the next available spot in the element array
         valueType m_elements[maxSize];
 };
