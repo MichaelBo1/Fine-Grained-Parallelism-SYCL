@@ -2,11 +2,12 @@
 #include <CL/sycl.hpp>
 
 
-template <typename TaskType>
-void produce_and_consume(sycl::queue &Q)
+struct InitData
 {
-
+    // Queues, dim size, Mutexes
 }
+
+
 
 /*
 FOR NOW JUST CONSIDER HOW THE CODE COULD BE DONE
