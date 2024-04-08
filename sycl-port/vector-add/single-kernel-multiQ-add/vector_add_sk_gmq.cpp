@@ -1,6 +1,6 @@
 #include <CL/sycl.hpp>
 #include "../../sycl_utils.hpp"
-#include "../../ArrayQueue.cpp"
+#include "../../tasking/ArrayQueue.cpp"
 #include "../va_profiler.cpp"
 
 template<std::size_t WorkGroupSize>

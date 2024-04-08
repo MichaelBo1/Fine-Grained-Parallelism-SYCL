@@ -3,23 +3,13 @@
 #include "../../tasking/ArrayQueue.cpp"
 #include "../va_profiler.cpp"
 
-template<std::size_t WorkGroupSize>
-void split_kernel_multi_queue_add(sycl::queue &Q, const std::size_t VecSize, std::vector<TimingEvent> &Events)
+template<std::size_t VecSize>
+void single_queue_add(sycl::queue &Q, std::vector<TimingEvent> &Events)
 {
-    const size_t NumWorkGroups = VecSize / WorkGroupSize;
-    if (NumWorkGroups % 2 != 0 && NumWorkGroups != 1)
-    {
-        std::cerr << "Number of work groups should divide Vector Size evenly!" << "\n";
-        return;
-    }
-
     auto StartTimePoint = std::chrono::high_resolution_clock::now();
 
-    auto TaskQueues = sycl::malloc_shared<SPMCArrayQueue<int, WorkGroupSize>>(NumWorkGroups, Q);
-    for (size_t i = 0; i < NumWorkGroups; i++)
-    {
-        new (TaskQueues + i) SPMCArrayQueue<int, WorkGroupSize>();
-    }
+    auto MyQueue = sycl::malloc_shared<SPMCArrayQueue<int, VecSize>>(1, Q);
+    new (MyQueue) SPMCArrayQueue<int, VecSize>();
 
     int *A = sycl::malloc_shared<int>(VecSize, Q);
     int *B = sycl::malloc_shared<int>(VecSize, Q);
@@ -35,18 +25,11 @@ void split_kernel_multi_queue_add(sycl::queue &Q, const std::size_t VecSize, std
 
     sycl::event EnqueueEvent = Q.submit([&](sycl::handler &h)
     {
-        h.parallel_for(sycl::nd_range<1>{sycl::range<1>{VecSize}, sycl::range<1>{WorkGroupSize}}, [=](sycl::nd_item<1> Item)
+        h.single_task([=]()
         {
-            if (Item.get_local_id() == 0)
+            for (int i =0; i < VecSize; i++)
             {
-                int QueueIdx = Item.get_global_id() / WorkGroupSize;
-                auto &TargetQueue = TaskQueues[QueueIdx];
-
-                for (int i = 0; i < WorkGroupSize; i++)
-                {
-                    int ItemVal = i + QueueIdx * WorkGroupSize;
-                    TargetQueue.push(ItemVal);
-                }
+                MyQueue->push(i);
             }
         });
     });
@@ -54,32 +37,27 @@ void split_kernel_multi_queue_add(sycl::queue &Q, const std::size_t VecSize, std
 
     sycl::event AddEvent = Q.submit([&](sycl::handler &h)
     {
-        h.parallel_for(sycl::nd_range<1>{sycl::range<1>{VecSize}, sycl::range<1>{WorkGroupSize}}, [=](sycl::nd_item<1> Item)
+        h.parallel_for(VecSize, [=](sycl::id<1> idx)
         {
-            int QueueIdx = Item.get_global_id() / WorkGroupSize;
-            auto &TargetQueue = TaskQueues[QueueIdx];
-
-            int ItemVal = TargetQueue.front(Item.get_local_id());
-            R[ItemVal] = A[ItemVal] + B[ItemVal];
-        });
+            // Prevent out-of-bounds access
+            if (idx < MyQueue->size())
+            {
+                int itemVal = MyQueue->front(idx);
+                R[itemVal] = A[itemVal] + B[itemVal];
+            } 
+        }); 
     });
     Q.wait();
 
     sycl::event ShutdownEvent = Q.submit([&](sycl::handler &h)
     {
-        h.parallel_for(sycl::nd_range<1>{sycl::range<1>{VecSize}, sycl::range<1>{WorkGroupSize}}, [=](sycl::nd_item<1> Item)
+        h.single_task([=]()
         {
-            if (Item.get_local_id() == 0)
+            while (!MyQueue->empty())
             {
-                int QueueIdx = Item.get_global_id() / WorkGroupSize;
-                auto &TargetQueue = TaskQueues[QueueIdx];
-
-                while (!TargetQueue.empty())
-                {
-                    TargetQueue.pop();
-                }
+                MyQueue->pop();
             }
-        });
+        }); 
     });
     Q.wait();
 
@@ -106,12 +84,11 @@ void split_kernel_multi_queue_add(sycl::queue &Q, const std::size_t VecSize, std
     Events.push_back({"Add Kernel Exec Time", VecSize, AddKernelProfileTime});
     Events.push_back({"Shutdown Kernel Exec Time", VecSize, ShutdownKernelProfileTime});
 
-
     // bool CorrectAdd = check_vector_add(R, VecSize);
     // std::cout << "Vector Addition for size: " << VecSize << "\n";
     // std::cout << "Correct? " << std::boolalpha << CorrectAdd << std::endl;
 
-    sycl::free(TaskQueues, Q);
+    sycl::free(MyQueue, Q);
     sycl::free(A, Q);
     sycl::free(B, Q);
     sycl::free(R, Q);
@@ -127,30 +104,36 @@ int main(int argc, char **argv)
 
     auto DevName = Device.get_info<sycl::info::device::name>();
 
-    constexpr std::size_t WorkGroupSize = 64;
-
-    auto MaxGroupSize = Device.get_info<sycl::info::device::max_work_group_size>();
-    if (WorkGroupSize > MaxGroupSize)
-    {
-        std::cerr << "Work Group Size cannot exceed " << MaxGroupSize << " on this device!" << "\n";
-        return 1;
-    }
-
     // ------------------------
     // PROFILING
     // ------------------------
     
     std::vector<TimingEvent> Events;
 
-    for (int i = 10; i < 30; i++)
-    {
-        std::size_t VecSize = std::pow(2, i);
-        split_kernel_multi_queue_add<WorkGroupSize>(Q, VecSize, Events);
-    }
+    single_queue_add<1024>(Q, Events);
+    single_queue_add<2048>(Q, Events);
+    single_queue_add<4096>(Q, Events);
+    single_queue_add<8192>(Q, Events);
+    single_queue_add<16384>(Q, Events);
+    single_queue_add<32768>(Q, Events);
+    single_queue_add<65536>(Q, Events);
+    single_queue_add<131072>(Q, Events);
+    single_queue_add<262144>(Q, Events);
+    single_queue_add<524288>(Q, Events);
+    single_queue_add<1048576>(Q, Events);
+    single_queue_add<2097152>(Q, Events);
+    single_queue_add<4194304>(Q, Events);
+    single_queue_add<8388608>(Q, Events);
+    single_queue_add<16777216>(Q, Events);
+    single_queue_add<33554432>(Q, Events);
+    single_queue_add<67108864>(Q, Events);
+    single_queue_add<134217728>(Q, Events);
+    single_queue_add<268435456>(Q, Events);
+    single_queue_add<536870912>(Q, Events);
 
     for (const TimingEvent &event : Events)
     {
-        std::cout << event.Name << "," << event.ExecTime << "," << event.VectorSize << "," << WorkGroupSize << "," << DevName << "\n";
+        std::cout << event.Name << "," << event.ExecTime << "," << event.VectorSize << "," << DevName << "\n";
     }
 
     return 0;
