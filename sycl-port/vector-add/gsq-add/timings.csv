@@ -899,3 +899,103 @@ Memory Setup Time,2051.94,536870912,NVIDIA GeForce RTX 2080 Ti
 Enqueue Kernel Exec Time,93303.8,536870912,NVIDIA GeForce RTX 2080 Ti
 Add Kernel Exec Time,737.656,536870912,NVIDIA GeForce RTX 2080 Ti
 Shutdown Kernel Exec Time,17895.7,536870912,NVIDIA GeForce RTX 2080 Ti
+Total Exec Time,6.677,1024,NVIDIA GeForce RTX 2080 Ti
+Memory Setup Time,0.483647,1024,NVIDIA GeForce RTX 2080 Ti
+Enqueue Kernel Exec Time,0.397728,1024,NVIDIA GeForce RTX 2080 Ti
+Add Kernel Exec Time,0.004128,1024,NVIDIA GeForce RTX 2080 Ti
+Shutdown Kernel Exec Time,0.03728,1024,NVIDIA GeForce RTX 2080 Ti
+Total Exec Time,0.856156,2048,NVIDIA GeForce RTX 2080 Ti
+Memory Setup Time,0.20645,2048,NVIDIA GeForce RTX 2080 Ti
+Enqueue Kernel Exec Time,0.481887,2048,NVIDIA GeForce RTX 2080 Ti
+Add Kernel Exec Time,0.004543,2048,NVIDIA GeForce RTX 2080 Ti
+Shutdown Kernel Exec Time,0.071681,2048,NVIDIA GeForce RTX 2080 Ti
+Total Exec Time,1.31759,4096,NVIDIA GeForce RTX 2080 Ti
+Memory Setup Time,0.15349,4096,NVIDIA GeForce RTX 2080 Ti
+Enqueue Kernel Exec Time,0.841727,4096,NVIDIA GeForce RTX 2080 Ti
+Add Kernel Exec Time,0.100223,4096,NVIDIA GeForce RTX 2080 Ti
+Shutdown Kernel Exec Time,0.139649,4096,NVIDIA GeForce RTX 2080 Ti
+Total Exec Time,2.15856,8192,NVIDIA GeForce RTX 2080 Ti
+Memory Setup Time,0.159927,8192,NVIDIA GeForce RTX 2080 Ti
+Enqueue Kernel Exec Time,1.42966,8192,NVIDIA GeForce RTX 2080 Ti
+Add Kernel Exec Time,0.207871,8192,NVIDIA GeForce RTX 2080 Ti
+Shutdown Kernel Exec Time,0.275103,8192,NVIDIA GeForce RTX 2080 Ti
+Total Exec Time,4.06172,16384,NVIDIA GeForce RTX 2080 Ti
+Memory Setup Time,0.186125,16384,NVIDIA GeForce RTX 2080 Ti
+Enqueue Kernel Exec Time,3.08211,16384,NVIDIA GeForce RTX 2080 Ti
+Add Kernel Exec Time,0.155905,16384,NVIDIA GeForce RTX 2080 Ti
+Shutdown Kernel Exec Time,0.549216,16384,NVIDIA GeForce RTX 2080 Ti
+Total Exec Time,7.56332,32768,NVIDIA GeForce RTX 2080 Ti
+Memory Setup Time,0.230121,32768,NVIDIA GeForce RTX 2080 Ti
+Enqueue Kernel Exec Time,5.9568,32768,NVIDIA GeForce RTX 2080 Ti
+Add Kernel Exec Time,0.185183,32768,NVIDIA GeForce RTX 2080 Ti
+Shutdown Kernel Exec Time,1.09552,32768,NVIDIA GeForce RTX 2080 Ti
+Total Exec Time,14.8678,65536,NVIDIA GeForce RTX 2080 Ti
+Memory Setup Time,0.314184,65536,NVIDIA GeForce RTX 2080 Ti
+Enqueue Kernel Exec Time,11.9762,65536,NVIDIA GeForce RTX 2080 Ti
+Add Kernel Exec Time,0.290718,65536,NVIDIA GeForce RTX 2080 Ti
+Shutdown Kernel Exec Time,2.18726,65536,NVIDIA GeForce RTX 2080 Ti
+Total Exec Time,28.1343,131072,NVIDIA GeForce RTX 2080 Ti
+Memory Setup Time,0.495551,131072,NVIDIA GeForce RTX 2080 Ti
+Enqueue Kernel Exec Time,22.7269,131072,NVIDIA GeForce RTX 2080 Ti
+Add Kernel Exec Time,0.436158,131072,NVIDIA GeForce RTX 2080 Ti
+Shutdown Kernel Exec Time,4.37248,131072,NVIDIA GeForce RTX 2080 Ti
+Total Exec Time,56.8508,262144,NVIDIA GeForce RTX 2080 Ti
+Memory Setup Time,1.12726,262144,NVIDIA GeForce RTX 2080 Ti
+Enqueue Kernel Exec Time,46.0616,262144,NVIDIA GeForce RTX 2080 Ti
+Add Kernel Exec Time,0.803452,262144,NVIDIA GeForce RTX 2080 Ti
+Shutdown Kernel Exec Time,8.74224,262144,NVIDIA GeForce RTX 2080 Ti
+Total Exec Time,108.585,524288,NVIDIA GeForce RTX 2080 Ti
+Memory Setup Time,1.8373,524288,NVIDIA GeForce RTX 2080 Ti
+Enqueue Kernel Exec Time,87.7803,524288,NVIDIA GeForce RTX 2080 Ti
+Add Kernel Exec Time,1.37164,524288,NVIDIA GeForce RTX 2080 Ti
+Shutdown Kernel Exec Time,17.48,524288,NVIDIA GeForce RTX 2080 Ti
+Total Exec Time,218.306,1048576,NVIDIA GeForce RTX 2080 Ti
+Memory Setup Time,3.56333,1048576,NVIDIA GeForce RTX 2080 Ti
+Enqueue Kernel Exec Time,177.095,1048576,NVIDIA GeForce RTX 2080 Ti
+Add Kernel Exec Time,2.57199,1048576,NVIDIA GeForce RTX 2080 Ti
+Shutdown Kernel Exec Time,34.9557,1048576,NVIDIA GeForce RTX 2080 Ti
+Total Exec Time,437.604,2097152,NVIDIA GeForce RTX 2080 Ti
+Memory Setup Time,6.95617,2097152,NVIDIA GeForce RTX 2080 Ti
+Enqueue Kernel Exec Time,355.227,2097152,NVIDIA GeForce RTX 2080 Ti
+Add Kernel Exec Time,5.36932,2097152,NVIDIA GeForce RTX 2080 Ti
+Shutdown Kernel Exec Time,69.9085,2097152,NVIDIA GeForce RTX 2080 Ti
+Total Exec Time,864.459,4194304,NVIDIA GeForce RTX 2080 Ti
+Memory Setup Time,15.1049,4194304,NVIDIA GeForce RTX 2080 Ti
+Enqueue Kernel Exec Time,698.484,4194304,NVIDIA GeForce RTX 2080 Ti
+Add Kernel Exec Time,10.8574,4194304,NVIDIA GeForce RTX 2080 Ti
+Shutdown Kernel Exec Time,139.815,4194304,NVIDIA GeForce RTX 2080 Ti
+Total Exec Time,1731.84,8388608,NVIDIA GeForce RTX 2080 Ti
+Memory Setup Time,30.4604,8388608,NVIDIA GeForce RTX 2080 Ti
+Enqueue Kernel Exec Time,1401.55,8388608,NVIDIA GeForce RTX 2080 Ti
+Add Kernel Exec Time,19.8369,8388608,NVIDIA GeForce RTX 2080 Ti
+Shutdown Kernel Exec Time,279.625,8388608,NVIDIA GeForce RTX 2080 Ti
+Total Exec Time,3521.94,16777216,NVIDIA GeForce RTX 2080 Ti
+Memory Setup Time,61.9893,16777216,NVIDIA GeForce RTX 2080 Ti
+Enqueue Kernel Exec Time,2867.96,16777216,NVIDIA GeForce RTX 2080 Ti
+Add Kernel Exec Time,32.3662,16777216,NVIDIA GeForce RTX 2080 Ti
+Shutdown Kernel Exec Time,559.245,16777216,NVIDIA GeForce RTX 2080 Ti
+Total Exec Time,6965.28,33554432,NVIDIA GeForce RTX 2080 Ti
+Memory Setup Time,126.945,33554432,NVIDIA GeForce RTX 2080 Ti
+Enqueue Kernel Exec Time,5661.95,33554432,NVIDIA GeForce RTX 2080 Ti
+Add Kernel Exec Time,57.4883,33554432,NVIDIA GeForce RTX 2080 Ti
+Shutdown Kernel Exec Time,1118.49,33554432,NVIDIA GeForce RTX 2080 Ti
+Total Exec Time,13875.8,67108864,NVIDIA GeForce RTX 2080 Ti
+Memory Setup Time,253.657,67108864,NVIDIA GeForce RTX 2080 Ti
+Enqueue Kernel Exec Time,11284,67108864,NVIDIA GeForce RTX 2080 Ti
+Add Kernel Exec Time,100.76,67108864,NVIDIA GeForce RTX 2080 Ti
+Shutdown Kernel Exec Time,2236.97,67108864,NVIDIA GeForce RTX 2080 Ti
+Total Exec Time,28418.5,134217728,NVIDIA GeForce RTX 2080 Ti
+Memory Setup Time,512.642,134217728,NVIDIA GeForce RTX 2080 Ti
+Enqueue Kernel Exec Time,23228.3,134217728,NVIDIA GeForce RTX 2080 Ti
+Add Kernel Exec Time,203.16,134217728,NVIDIA GeForce RTX 2080 Ti
+Shutdown Kernel Exec Time,4473.93,134217728,NVIDIA GeForce RTX 2080 Ti
+Total Exec Time,55037.8,268435456,NVIDIA GeForce RTX 2080 Ti
+Memory Setup Time,1016.11,268435456,NVIDIA GeForce RTX 2080 Ti
+Enqueue Kernel Exec Time,44696,268435456,NVIDIA GeForce RTX 2080 Ti
+Add Kernel Exec Time,377.492,268435456,NVIDIA GeForce RTX 2080 Ti
+Shutdown Kernel Exec Time,8947.86,268435456,NVIDIA GeForce RTX 2080 Ti
+Total Exec Time,113102,536870912,NVIDIA GeForce RTX 2080 Ti
+Memory Setup Time,2051.09,536870912,NVIDIA GeForce RTX 2080 Ti
+Enqueue Kernel Exec Time,92565.5,536870912,NVIDIA GeForce RTX 2080 Ti
+Add Kernel Exec Time,730.453,536870912,NVIDIA GeForce RTX 2080 Ti
+Shutdown Kernel Exec Time,17754.8,536870912,NVIDIA GeForce RTX 2080 Ti
