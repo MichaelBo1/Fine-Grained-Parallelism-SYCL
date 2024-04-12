@@ -22,23 +22,21 @@ int main(int argc, char **argv)
     sycl::device Device = Q.get_device();
 
     auto DevName = Device.get_info<sycl::info::device::name>();
-
     // ------------------------
     // PROFILING
     // ------------------------
-    std::vector<TimingEvent> Events;
 
     auto StartTimePoint = std::chrono::high_resolution_clock::now();
 
-    int *A = sycl::malloc_shared<int>(VecSize, Q);
-    int *B = sycl::malloc_shared<int>(VecSize, Q);
-    int *R = sycl::malloc_shared<int>(VecSize, Q);
-
-    for (int i = 0; i < VecSize; i++)
-    {
-        A[i] = 1;
-        B[i] = 0;
-    }
+    int *A = sycl::malloc_device<int>(VecSize, Q);
+    int *B = sycl::malloc_device<int>(VecSize, Q);
+    int *R = sycl::malloc_device<int>(VecSize, Q);
+    Q.parallel_for(VecSize, [=](sycl::id<1> idx) {
+        A[idx] = 1;
+        B[idx] = 0;
+        R[idx] = 0;
+    });
+    Q.wait();
 
     auto MemorySetupTimePoint = std::chrono::high_resolution_clock::now();
 
@@ -53,6 +51,17 @@ int main(int argc, char **argv)
 
     auto EndTimePoint = std::chrono::high_resolution_clock::now();
 
+    // bring mem over to check correctness
+    // int hostR[VecSize];
+    // Q.memcpy(hostR, R, VecSize * sizeof(int));
+    // Q.wait();
+
+    // std::cout << "Checking correctness:" << "\n";
+    // bool CorrectAdd = check_vector_add(hostR, VecSize);
+    // std::cout << "Vector Addition for size: " << VecSize << "\n";
+    // std::cout << "Correct? " << std::boolalpha << CorrectAdd << std::endl;
+
+
     durationMiliSecs ExecTime = EndTimePoint - StartTimePoint;
     durationMiliSecs MemTime = MemorySetupTimePoint - StartTimePoint;
 
@@ -60,23 +69,13 @@ int main(int argc, char **argv)
     auto EndKernelExecTimePoint = AddEvent.get_profiling_info<sycl::info::event_profiling::command_end>();
     double KernelProfileTime = to_mili(EndKernelExecTimePoint - StartKernelExecTimePoint);
 
-    Events.push_back({"Total Exec Time", VecSize, ExecTime.count()});
-    Events.push_back({"Memory Setup Time", VecSize, MemTime.count()});
-    Events.push_back({"Kernel Exec Time", VecSize, KernelProfileTime});
-
-    // bool CorrectAdd = check_vector_add(R, VecSize);
-    // std::cout << "Vector Addition for size: " << VecSize << "\n";
-    // std::cout << "Correct? " << std::boolalpha << CorrectAdd << std::endl;
+    std::cout << "Total Exec Time" << "," << ExecTime.count() << "," << VecSize << "\n";
+    std::cout << "Memory Setup Time" << "," << MemTime.count() << "," << VecSize << "\n";
+    std::cout << "Kernel Exec Time" << "," << KernelProfileTime << "," << VecSize << "\n";
 
     sycl::free(A, Q);
     sycl::free(B, Q);
     sycl::free(R, Q);
     
-
-    for (const TimingEvent &event : Events)
-    {
-        std::cout << event.Name << "," << event.ExecTime << "," << event.VectorSize << "," << DevName << "\n";
-    }
-
     return 0;
 }
