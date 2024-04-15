@@ -8,18 +8,24 @@ void single_queue_add(sycl::queue &Q, std::vector<TimingEvent> &Events)
 {
     auto StartTimePoint = std::chrono::high_resolution_clock::now();
 
-    auto MyQueue = sycl::malloc_shared<SPMCArrayQueue<int, VecSize>>(1, Q);
-    new (MyQueue) SPMCArrayQueue<int, VecSize>();
+    auto TaskQueue = sycl::malloc_device<SPMCArrayQueue<int, VecSize>>(1, Q);
 
-    int *A = sycl::malloc_shared<int>(VecSize, Q);
-    int *B = sycl::malloc_shared<int>(VecSize, Q);
-    int *R = sycl::malloc_shared<int>(VecSize, Q);
+    int *A = sycl::malloc_device<int>(VecSize, Q);
+    int *B = sycl::malloc_device<int>(VecSize, Q);
+    int *R = sycl::malloc_device<int>(VecSize, Q);
 
-    for (int i = 0; i < VecSize; i++)
-    {
-        A[i] = 1;
-        B[i] = 0;
-    }
+    Q.parallel_for(VecSize, [=](sycl::id<1> idx) {
+        A[idx] = 1;
+        B[idx] = 0;
+        R[idx] = 0;
+    });
+    Q.wait();
+    Q.single_task([=]()
+        {
+            new (TaskQueue) SPMCArrayQueue<int, VecSize>();
+        }
+    );
+    Q.wait();
 
     auto MemorySetupTimePoint = std::chrono::high_resolution_clock::now();
 
@@ -29,7 +35,7 @@ void single_queue_add(sycl::queue &Q, std::vector<TimingEvent> &Events)
         {
             for (int i =0; i < VecSize; i++)
             {
-                MyQueue->push(i);
+                TaskQueue->push(i);
             }
         });
     });
@@ -40,9 +46,9 @@ void single_queue_add(sycl::queue &Q, std::vector<TimingEvent> &Events)
         h.parallel_for(VecSize, [=](sycl::id<1> idx)
         {
             // Prevent out-of-bounds access
-            if (idx < MyQueue->size())
+            if (idx < TaskQueue->size())
             {
-                int itemVal = MyQueue->front(idx);
+                int itemVal = TaskQueue->front(idx);
                 R[itemVal] = A[itemVal] + B[itemVal];
             } 
         }); 
@@ -53,9 +59,9 @@ void single_queue_add(sycl::queue &Q, std::vector<TimingEvent> &Events)
     {
         h.single_task([=]()
         {
-            while (!MyQueue->empty())
+            while (!TaskQueue->empty())
             {
-                MyQueue->pop();
+                TaskQueue->pop();
             }
         }); 
     });
@@ -88,7 +94,7 @@ void single_queue_add(sycl::queue &Q, std::vector<TimingEvent> &Events)
     // std::cout << "Vector Addition for size: " << VecSize << "\n";
     // std::cout << "Correct? " << std::boolalpha << CorrectAdd << std::endl;
 
-    sycl::free(MyQueue, Q);
+    sycl::free(TaskQueue, Q);
     sycl::free(A, Q);
     sycl::free(B, Q);
     sycl::free(R, Q);
@@ -110,25 +116,25 @@ int main(int argc, char **argv)
     
     std::vector<TimingEvent> Events;
 
-    single_queue_add<1024>(Q, Events);
-    single_queue_add<2048>(Q, Events);
-    single_queue_add<4096>(Q, Events);
-    single_queue_add<8192>(Q, Events);
-    single_queue_add<16384>(Q, Events);
-    single_queue_add<32768>(Q, Events);
-    single_queue_add<65536>(Q, Events);
-    single_queue_add<131072>(Q, Events);
-    single_queue_add<262144>(Q, Events);
-    single_queue_add<524288>(Q, Events);
-    single_queue_add<1048576>(Q, Events);
-    single_queue_add<2097152>(Q, Events);
-    single_queue_add<4194304>(Q, Events);
-    single_queue_add<8388608>(Q, Events);
-    single_queue_add<16777216>(Q, Events);
-    single_queue_add<33554432>(Q, Events);
-    single_queue_add<67108864>(Q, Events);
-    single_queue_add<134217728>(Q, Events);
-    single_queue_add<268435456>(Q, Events);
+    // single_queue_add<1024>(Q, Events);
+    // single_queue_add<2048>(Q, Events);
+    // single_queue_add<4096>(Q, Events);
+    // single_queue_add<8192>(Q, Events);
+    // single_queue_add<16384>(Q, Events);
+    // single_queue_add<32768>(Q, Events);
+    // single_queue_add<65536>(Q, Events);
+    // single_queue_add<131072>(Q, Events);
+    // single_queue_add<262144>(Q, Events);
+    // single_queue_add<524288>(Q, Events);
+    // single_queue_add<1048576>(Q, Events);
+    // single_queue_add<2097152>(Q, Events);
+    // single_queue_add<4194304>(Q, Events);
+    // single_queue_add<8388608>(Q, Events);
+    // single_queue_add<16777216>(Q, Events);
+    // single_queue_add<33554432>(Q, Events);
+    // single_queue_add<67108864>(Q, Events);
+    // single_queue_add<134217728>(Q, Events);
+    // single_queue_add<268435456>(Q, Events);
     single_queue_add<536870912>(Q, Events);
 
     for (const TimingEvent &event : Events)
