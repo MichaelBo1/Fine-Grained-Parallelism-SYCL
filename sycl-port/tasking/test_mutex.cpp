@@ -2,7 +2,7 @@
 #include "../sycl_utils.hpp"
 #include "Mutex.hpp"
 
-int main void()
+int main()
 {
     sycl::default_selector device_selector;
 
@@ -13,25 +13,52 @@ int main void()
     std::cout << Device;
 
 
-    Mutex SimpleMutex = sycl::malloc_shared<Mutex>(1, Q);
+    auto SimpleMutex = sycl::malloc_shared<Mutex>(1, Q);
     new (SimpleMutex) Mutex();
 
     int *Val = sycl::malloc_shared<int>(1, Q);
     *Val = 0;
 
+    // Q.submit([&](sycl::handler &h)
+    // {
+    //     sycl::stream out(1024, 256, h);
+
+    //     h.parallel_for(16, [=](sycl::id<1> idx)
+    //     {
+    //         out << "Trying to process for idx: " << idx << "\n";
+    //         SimpleMutex->lock();
+    //         *Val += 1;
+    //         SimpleMutex->unlock();
+    //     });
+    // });
+    // Q.wait();
     Q.submit([&](sycl::handler &h)
     {
-        h.parallel_for(16, [=](sycl::id<1> idx)
+        sycl::stream out(1024, 256, h);
+        // 4 groups of 4
+        h.parallel_for(sycl::nd_range<1>{sycl::range<1>{16}, sycl::range<1>{4}}, [=](sycl::nd_item<1> Item)
         {
-            SimpleMutex->lock();
-            *Val += 1;
+            bool IsMaster = Item.get_local_id() == 0;
+            sycl::group Group = Item.get_group();
+
+            if (IsMaster)
+            {
+                out << "Master in " << Item.get_global_id() << " acquiring lock \n";
+                SimpleMutex->lock();
+                *Val += 1;
+            }
+
+            sycl::group_barrier(Group);
             SimpleMutex->unlock();
+            sycl::group_barrier(Group);
+
+
         });
     });
     Q.wait();
 
     std::cout << "Val: " << *Val << "\n";
-    if (*Val == 16)
+    if (*Val == 4)
     {
         std::cout << "Mutex works as expected for parallel_for!\n";
     }
