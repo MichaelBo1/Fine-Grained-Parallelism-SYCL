@@ -2,8 +2,7 @@
 
 #SBATCH --partition=ug-gpu-small
 #SBATCH --ntasks=1
-#SBATCH --time=00:40:00
-#SBATCH --output=./slurm-reports/%j.out
+#SBATCH --time=03:00:00
 
 #SBATCH --gres=gpu:ampere:1
 #SBATCH --nodelist=gpu12
