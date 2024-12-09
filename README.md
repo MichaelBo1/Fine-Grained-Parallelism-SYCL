@@ -1,3 +1,4 @@
+# Fine-Grained Parallelism in SYCL
 This repository contains the source code and experimental framework for porting the GPU-tasking framework GPU-Eventify from CUDA to SYCL. The primary objective is to extend GPU-Eventify's capabilities for heterogeneous device support while maintaining portability, performance, and correctness.
 
 > This work represents a preliminary exploration, developed and tested on SLURM-managed jobs on a university compute cluster. The code is rough and not fully optimized, with findings being tentative. Notably, challenges were encountered, particularly regarding the lack of robust synchronization primitive support in SYCL.
